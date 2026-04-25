@@ -1,0 +1,30 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large binary assets
+*.mp3
+*.ogg
+*.wav
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.ttf
+
+# Logs and runtime data
+*.log
+highscore.txt

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from game import Game; g = Game\\(\\); print\\('Game init OK, state:', g.game_state\\)\")",
+      "Bash(python -c \"from game import Game; g = Game\\(\\); print\\('OK'\\)\")"
+    ]
+  }
+}
