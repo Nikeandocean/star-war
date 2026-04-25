@@ -177,7 +177,7 @@ class Player(pygame.sprite.Sprite):
         from weapons import Bomb
         if self.bomb_count > 0:
             self.bomb_count -= 1
-            return Bomb(self.rect.centerx, self.rect.bottom)
+            return Bomb(self.rect.centerx, self.rect.centery)
         return None
 
     def draw_health(self, surface):

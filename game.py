@@ -215,20 +215,25 @@ class Game:
 
         # Bombs
         for bomb in list(self.bombs):
-            if bomb.rect.top > SCREEN_HEIGHT - 50:
+            if bomb.should_explode():
                 explosion = bomb.explode()
                 self.explosions.append(explosion)
                 self.shake_timer = 30
                 self.shake_intensity = 8
 
-                for enemy in self.enemies:
+                for enemy in list(self.enemies):
                     dist = math.hypot(
                         enemy.rect.centerx - bomb.rect.centerx,
-                        enemy.rect.centery - (SCREEN_HEIGHT - 10))
-                    if dist < explosion.blast_radius:
+                        enemy.rect.centery - bomb.rect.centery)
+                    if dist < explosion.size:
                         if enemy.take_damage(explosion.damage):
                             self.add_explosion(enemy.rect.centerx,
                                              enemy.rect.centery, 30)
+                            self.combo += 1
+                            self.max_combo = max(self.max_combo, self.combo)
+                            self.score += enemy.score_value
+                            self.enemies_destroyed += 1
+                            enemy.kill()
                 bomb.kill()
 
         # Player collects power-ups

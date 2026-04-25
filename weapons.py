@@ -95,7 +95,7 @@ class Missile(pygame.sprite.Sprite):
 
 
 class Bomb(pygame.sprite.Sprite):
-    """Ground bomb for area damage"""
+    """Area damage bomb that detonates above the player"""
     def __init__(self, x, y):
         super().__init__()
         self.image = pygame.Surface((20, 25), pygame.SRCALPHA)
@@ -105,22 +105,25 @@ class Bomb(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.top = y
-        self.speed = 3
+        self.spawn_y = y
+        self.speed = -8
         self.damage = 150
-        self.blast_radius = 150
+        self.blast_radius = 200
+        self.exploded = False
 
     def update(self):
         self.rect.y += self.speed
-        self.speed += 0.2
-        if self.rect.top > SCREEN_HEIGHT:
-            self.kill()
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
+    def should_explode(self):
+        """Detonate after moving up a short distance."""
+        return self.spawn_y - self.rect.top > 50
+
     def explode(self):
         from effects import Explosion
-        return Explosion(self.rect.centerx, SCREEN_HEIGHT - 10, self.blast_radius,
+        return Explosion(self.rect.centerx, self.rect.centery, self.blast_radius,
                         damage=self.damage, is_bomb=True)
 
 
