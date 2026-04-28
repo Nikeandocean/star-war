@@ -168,7 +168,13 @@ class Game:
                 for enemy in hits:
                     self.combo += 1
                     self.max_combo = max(self.max_combo, self.combo)
-                    self.score += enemy.score_value
+                    self.total_kills += 1
+                    multiplier = 1 + min(self.combo / 10, 5)
+                    self.score += int(enemy.score_value * multiplier)
+                    if random.random() < 0.2:
+                        powerup = self._create_powerup(enemy.rect.center)
+                        self.powerups.add(powerup)
+                    self.enemies_destroyed += 1
 
         # Boss collisions
         if self.boss:
@@ -229,9 +235,16 @@ class Game:
                         if enemy.take_damage(explosion.damage):
                             self.add_explosion(enemy.rect.centerx,
                                              enemy.rect.centery, 30)
+                            self.add_particles(enemy.rect.centerx,
+                                             enemy.rect.centery, ORANGE, 15)
                             self.combo += 1
                             self.max_combo = max(self.max_combo, self.combo)
-                            self.score += enemy.score_value
+                            self.total_kills += 1
+                            multiplier = 1 + min(self.combo / 10, 5)
+                            self.score += int(enemy.score_value * multiplier)
+                            if random.random() < 0.2:
+                                powerup = self._create_powerup(enemy.rect.center)
+                                self.powerups.add(powerup)
                             self.enemies_destroyed += 1
                             enemy.kill()
                 bomb.kill()
