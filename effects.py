@@ -195,11 +195,20 @@ class LaserBeam:
 
     def draw(self, surface):
         if self.state == 'charging':
-            for i in range(3):
-                offset = math.sin(pygame.time.get_ticks() * 0.1 + i) * 10
-                pygame.draw.line(surface, (255, 100, 0),
-                               (self.x + offset, self.y),
-                               (self.x + offset, self.y + 50), 5)
+            progress = 1 - self.charge_time / 60
+            beam_width = int(8 + progress * 20)
+            alpha = int(150 * progress)
+            charge_surf = pygame.Surface((beam_width * 2, SCREEN_HEIGHT - self.y), pygame.SRCALPHA)
+            charge_surf.set_alpha(alpha)
+            pygame.draw.rect(charge_surf, (255, 100, 0),
+                           (beam_width // 2, 0, beam_width, SCREEN_HEIGHT - self.y))
+            surface.blit(charge_surf, (self.x - beam_width, self.y))
+            for i in range(5):
+                offset = math.sin(pygame.time.get_ticks() * 0.1 + i) * 15
+                flicker = random.randint(-3, 3)
+                pygame.draw.line(surface, (255, 150, 0),
+                               (self.x + offset + flicker, self.y),
+                               (self.x + offset + flicker, self.y + 80), 4)
 
         elif self.state == 'firing':
             pygame.draw.rect(surface, (255, 255, 200),
