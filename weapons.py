@@ -65,6 +65,7 @@ class Missile(pygame.sprite.Sprite):
         self.vx = 0
         self.lifetime = 300
         self.damage = 100
+        self.blast_radius = 150
         self.trail = []
 
     def update(self):
@@ -87,6 +88,11 @@ class Missile(pygame.sprite.Sprite):
 
         if self.rect.bottom < 0:
             self.kill()
+
+    def explode(self):
+        from effects import Explosion
+        return Explosion(self.rect.centerx, self.rect.centery, self.blast_radius,
+                         damage=self.damage, is_bomb=False)
 
     def draw(self, surface):
         for p in self.trail:

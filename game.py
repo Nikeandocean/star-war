@@ -158,31 +158,62 @@ class Game:
                 enemy.kill()
                 self.enemies_destroyed += 1
 
-        # Missiles hit enemies
+        # Missiles hit enemies — explode on first contact, damage all in radius
         for missile in list(self.missiles):
-            hits = pygame.sprite.spritecollide(missile, self.enemies, True)
+            hits = pygame.sprite.spritecollide(missile, self.enemies, False)
             if hits:
-                self.add_explosion(missile.rect.centerx, missile.rect.centery, 80, 100)
+                explosion = missile.explode()
+                self.explosions.append(explosion)
+                self.shake_timer = 20
+                self.shake_intensity = 6
                 self.add_particles(missile.rect.centerx, missile.rect.centery, RED, 30)
                 missile.kill()
-                for enemy in hits:
-                    self.combo += 1
-                    self.max_combo = max(self.max_combo, self.combo)
-                    self.total_kills += 1
-                    multiplier = 1 + min(self.combo / 10, 5)
-                    self.score += int(enemy.score_value * multiplier)
-                    if random.random() < 0.2:
-                        powerup = self._create_powerup(enemy.rect.center)
-                        self.powerups.add(powerup)
-                    self.enemies_destroyed += 1
+                for enemy in list(self.enemies):
+                    dist = math.hypot(
+                        enemy.rect.centerx - explosion.x,
+                        enemy.rect.centery - explosion.y)
+                    if dist < explosion.size:
+                        if enemy.take_damage(explosion.damage):
+                            self.add_explosion(enemy.rect.centerx,
+                                             enemy.rect.centery, 30)
+                            self.add_particles(enemy.rect.centerx,
+                                             enemy.rect.centery, ORANGE, 15)
+                            self.combo += 1
+                            self.max_combo = max(self.max_combo, self.combo)
+                            self.total_kills += 1
+                            multiplier = 1 + min(self.combo / 10, 5)
+                            self.score += int(enemy.score_value * multiplier)
+                            if random.random() < 0.2:
+                                powerup = self._create_powerup(enemy.rect.center)
+                                self.powerups.add(powerup)
+                            self.enemies_destroyed += 1
+                            enemy.kill()
 
         # Boss collisions
         if self.boss:
-            for projectile_group in [self.player_bullets, self.missiles]:
-                for proj in list(projectile_group):
-                    if self.boss.rect.colliderect(proj.rect):
-                        proj.kill()
-                        if self.boss.take_damage(proj.damage):
+            for proj in list(self.player_bullets):
+                if self.boss.rect.colliderect(proj.rect):
+                    proj.kill()
+                    if self.boss.take_damage(proj.damage):
+                        self.add_explosion(self.boss.rect.centerx,
+                                         self.boss.rect.centery, 150)
+                        self.add_particles(self.boss.rect.centerx,
+                                         self.boss.rect.centery, GOLD, 50)
+                        self.score += self.boss.score_value
+                        self.shake_timer = 60
+                        self.shake_intensity = 10
+                        self.boss = None
+                        break
+            if self.boss:
+                for missile in list(self.missiles):
+                    if self.boss.rect.colliderect(missile.rect):
+                        explosion = missile.explode()
+                        self.explosions.append(explosion)
+                        self.shake_timer = 20
+                        self.shake_intensity = 6
+                        self.add_particles(missile.rect.centerx, missile.rect.centery, RED, 30)
+                        missile.kill()
+                        if self.boss.take_damage(explosion.damage):
                             self.add_explosion(self.boss.rect.centerx,
                                              self.boss.rect.centery, 150)
                             self.add_particles(self.boss.rect.centerx,
@@ -191,7 +222,28 @@ class Game:
                             self.shake_timer = 60
                             self.shake_intensity = 10
                             self.boss = None
-                            break
+                        else:
+                            for enemy in list(self.enemies):
+                                dist = math.hypot(
+                                    enemy.rect.centerx - explosion.x,
+                                    enemy.rect.centery - explosion.y)
+                                if dist < explosion.size:
+                                    if enemy.take_damage(explosion.damage):
+                                        self.add_explosion(enemy.rect.centerx,
+                                                         enemy.rect.centery, 30)
+                                        self.add_particles(enemy.rect.centerx,
+                                                         enemy.rect.centery, ORANGE, 15)
+                                        self.combo += 1
+                                        self.max_combo = max(self.max_combo, self.combo)
+                                        self.total_kills += 1
+                                        multiplier = 1 + min(self.combo / 10, 5)
+                                        self.score += int(enemy.score_value * multiplier)
+                                        if random.random() < 0.2:
+                                            powerup = self._create_powerup(enemy.rect.center)
+                                            self.powerups.add(powerup)
+                                        self.enemies_destroyed += 1
+                                        enemy.kill()
+                        break
 
         # Enemies hit player
         hits = pygame.sprite.spritecollide(self.player, self.enemies, True)
