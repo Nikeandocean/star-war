@@ -250,7 +250,7 @@ class Game:
         for enemy in hits:
             if not self.player.invincible:
                 damage = 30 + enemy.enemy_type * 10
-                self.player.health -= damage
+                self.player.take_damage(damage)
                 self.player.invincible = True
                 self.player.invincible_timer = 90
                 self.player.hit_effect_timer = 30
@@ -264,7 +264,7 @@ class Game:
         for bullet in hits:
             if not self.player.invincible:
                 damage = getattr(bullet, 'damage', 15)
-                self.player.health -= damage
+                self.player.take_damage(damage)
                 self.player.invincible = True
                 self.player.invincible_timer = 45
                 self.player.hit_effect_timer = 15
@@ -311,7 +311,7 @@ class Game:
             damage_rect = beam.get_damage_rect()
             if damage_rect and not self.player.invincible:
                 if damage_rect.colliderect(self.player.rect):
-                    self.player.health -= beam.damage
+                    self.player.take_damage(beam.damage)
                     self.player.hit_effect_timer = 5
 
     def _create_powerup(self, center):
