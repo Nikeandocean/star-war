@@ -7,7 +7,7 @@ pygame.mixer.init()
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF)
-pygame.display.set_caption("Star War")
+pygame.display.set_caption("Star Wars: Galaxy Battle")
 
 # Colors
 BLACK = (0, 0, 0)

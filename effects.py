@@ -117,13 +117,32 @@ class Explosion:
         if not self.active:
             return
 
+        # Shockwave
+        if self.frame < 10:
+            alpha = int(200 * (1 - self.frame / 10))
+            shock_surf = pygame.Surface((self.shockwave * 2, self.shockwave * 2), pygame.SRCALPHA)
+            shock_surf.set_alpha(alpha)
+            pygame.draw.circle(shock_surf, (255, 255, 200),
+                             (self.shockwave, self.shockwave), self.shockwave)
+            surface.blit(shock_surf, (self.x - self.shockwave, self.y - self.shockwave))
+
+        # Main explosion body
         radius = int(self.size * (self.frame / self.max_frames) * 2)
         if radius > 0:
             alpha = int(255 * (1 - self.frame / self.max_frames))
+
             outer_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
             outer_surf.set_alpha(alpha)
             pygame.draw.circle(outer_surf, (255, 100, 0), (radius, radius), radius)
             surface.blit(outer_surf, (self.x - radius, self.y - radius))
+
+            inner_radius = radius // 2
+            if inner_radius > 0:
+                inner_surf = pygame.Surface((inner_radius * 2, inner_radius * 2), pygame.SRCALPHA)
+                inner_surf.set_alpha(alpha)
+                pygame.draw.circle(inner_surf, (255, 255, 100),
+                                 (inner_radius, inner_radius), inner_radius)
+                surface.blit(inner_surf, (self.x - inner_radius, self.y - inner_radius))
 
         for p in self.particles:
             p.draw(surface)
