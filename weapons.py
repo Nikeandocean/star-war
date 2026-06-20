@@ -10,15 +10,13 @@ from effects import Particle
 
 
 class Bullet(pygame.sprite.Sprite):
-    """Player bullet with trail effect"""
+    """Player bullet with trail effect."""
     def __init__(self, x, y, angle=0):
         super().__init__()
         self.image = pygame.Surface((20, 25), pygame.SRCALPHA)
-
         pygame.draw.ellipse(self.image, CYAN, (0, 0, 20, 25))
         pygame.draw.ellipse(self.image, WHITE, (5, 5, 10, 15))
         pygame.draw.ellipse(self.image, LIGHT_YELLOW, (8, 8, 4, 10))
-
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.bottom = y
@@ -30,32 +28,27 @@ class Bullet(pygame.sprite.Sprite):
     def update(self):
         self.rect.y += self.speed
         self.rect.x += self.angle
-
         if random.random() < 0.5:
             self.trail_particles.append(
-                Particle(self.rect.centerx, self.rect.bottom, CYAN, 1, 10, 2)
-            )
-
+                Particle(self.rect.centerx, self.rect.bottom, CYAN, 1, 10, 2))
         self.trail_particles = [p for p in self.trail_particles if p.update()]
-
         if self.rect.bottom < 0:
             self.kill()
 
-    def draw(self, surface):
+    def draw(self, surface, ox=0, oy=0):
         for p in self.trail_particles:
-            p.draw(surface)
-        surface.blit(self.image, self.rect)
+            p.draw(surface, ox, oy)
+        surface.blit(self.image, (self.rect.x + ox, self.rect.y + oy))
 
 
 class Missile(pygame.sprite.Sprite):
-    """Homing missile"""
+    """Homing missile."""
     def __init__(self, x, y, target=None):
         super().__init__()
         self.image = pygame.Surface((15, 30), pygame.SRCALPHA)
         pygame.draw.ellipse(self.image, (100, 100, 100), (0, 0, 15, 30))
         pygame.draw.ellipse(self.image, RED, (2, 5, 11, 20))
         pygame.draw.polygon(self.image, RED, [(7, 0), (3, 10), (12, 10)])
-
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.bottom = y
@@ -73,19 +66,15 @@ class Missile(pygame.sprite.Sprite):
         if self.lifetime <= 0:
             self.kill()
             return
-
         if self.target and self.target.alive():
             dx = self.target.rect.centerx - self.rect.centerx
             self.vx += dx * 0.01
             self.vx = max(-5, min(5, self.vx))
-
         self.rect.x += self.vx
         self.rect.y -= self.speed
-
         self.trail.append(Particle(self.rect.centerx, self.rect.bottom + 5,
-                                  ORANGE, 2, 15, 4, math.pi/2))
+                                   ORANGE, 2, 15, 4, math.pi / 2))
         self.trail = [p for p in self.trail if p.update()]
-
         if self.rect.bottom < 0:
             self.kill()
 
@@ -94,20 +83,19 @@ class Missile(pygame.sprite.Sprite):
         return Explosion(self.rect.centerx, self.rect.centery, self.blast_radius,
                          damage=self.damage, is_bomb=False)
 
-    def draw(self, surface):
+    def draw(self, surface, ox=0, oy=0):
         for p in self.trail:
-            p.draw(surface)
-        surface.blit(self.image, self.rect)
+            p.draw(surface, ox, oy)
+        surface.blit(self.image, (self.rect.x + ox, self.rect.y + oy))
 
 
 class Bomb(pygame.sprite.Sprite):
-    """Area damage bomb that detonates above the player"""
+    """Area damage bomb."""
     def __init__(self, x, y):
         super().__init__()
         self.image = pygame.Surface((20, 25), pygame.SRCALPHA)
         pygame.draw.ellipse(self.image, (50, 50, 50), (0, 0, 20, 25))
         pygame.draw.circle(self.image, RED, (10, 8), 5)
-
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.top = y
@@ -115,31 +103,26 @@ class Bomb(pygame.sprite.Sprite):
         self.speed = -8
         self.damage = 150
         self.blast_radius = 200
-        self.exploded = False
 
     def update(self):
         self.rect.y += self.speed
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
-
     def should_explode(self):
-        """Detonate after moving up a short distance."""
         return self.spawn_y - self.rect.top > 50
 
     def explode(self):
         from effects import Explosion
         return Explosion(self.rect.centerx, self.rect.centery, self.blast_radius,
-                        damage=self.damage, is_bomb=True)
+                         damage=self.damage, is_bomb=True)
 
 
 class PowerUp(pygame.sprite.Sprite):
-    """Power-up items with glow effect"""
+    """Power-up items with glow effect."""
     def __init__(self, center):
         super().__init__()
         self.type = random.choices(
-            ['health', 'shield', 'power', 'bomb', 'missile', 'energy'],
-            weights=[20, 20, 15, 10, 10, 25]
+            ['health', 'power', 'bomb', 'missile', 'energy'],
+            weights=[25, 15, 10, 10, 40]
         )[0]
         self.image = pygame.Surface((35, 35), pygame.SRCALPHA)
         self.rect = self.image.get_rect()
@@ -152,28 +135,22 @@ class PowerUp(pygame.sprite.Sprite):
     def draw_powerup(self):
         colors = {
             'health': (RED, WHITE),
-            'shield': (CYAN, WHITE),
             'power': (YELLOW, ORANGE),
             'bomb': (ORANGE, RED),
             'missile': (PURPLE, PINK),
             'energy': (GREEN, LIGHT_YELLOW),
         }
         main_color, accent_color = colors.get(self.type, (WHITE, WHITE))
-
         glow_size = 35 + int(math.sin(self.glow_phase) * 5)
         glow_surf = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
         glow_surf.set_alpha(50)
         pygame.draw.circle(glow_surf, main_color[:3],
-                          (glow_size // 2, glow_size // 2), glow_size // 2)
+                           (glow_size // 2, glow_size // 2), glow_size // 2)
         self.image.blit(glow_surf, (17 - glow_size // 2, 17 - glow_size // 2))
-
         if self.type == 'health':
             pygame.draw.rect(self.image, main_color, (8, 8, 19, 19), border_radius=5)
             pygame.draw.line(self.image, accent_color, (17, 11), (17, 24), 3)
             pygame.draw.line(self.image, accent_color, (11, 17), (23, 17), 3)
-        elif self.type == 'shield':
-            pygame.draw.circle(self.image, main_color, (17, 17), 12)
-            pygame.draw.polygon(self.image, accent_color, [(17, 5), (5, 28), (29, 28)], 2)
         elif self.type == 'power':
             pts = [(17, 3), (8, 15), (15, 15), (10, 30), (25, 18), (18, 18)]
             pygame.draw.polygon(self.image, main_color, pts)
@@ -193,6 +170,5 @@ class PowerUp(pygame.sprite.Sprite):
         self.glow_phase += 0.1
         self.rect.x += math.sin(self.angle) * 1.5
         self.draw_powerup()
-
         if self.rect.top > SCREEN_HEIGHT:
             self.kill()

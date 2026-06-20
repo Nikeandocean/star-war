@@ -31,7 +31,7 @@ class Star:
 
 
 class Nebula:
-    """Background nebula clouds"""
+    """Background nebula clouds — pre-rendered for stable appearance."""
     def __init__(self):
         self.x = random.randint(0, SCREEN_WIDTH)
         self.y = random.randint(0, SCREEN_HEIGHT)
@@ -45,6 +45,20 @@ class Nebula:
             (0, 100, 50),    # Dark green
         ])
         self.alpha = random.randint(30, 60)
+        self._surface = self._render()
+
+    def _render(self):
+        """Pre-render nebula cloud once."""
+        surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        for i in range(5):
+            offset_x = random.randint(-20, 20)
+            offset_y = random.randint(-20, 20)
+            radius = min(self.width, self.height) // 2 + random.randint(-10, 10)
+            color = (*self.color, self.alpha // 5)
+            pygame.draw.circle(surf, color,
+                             (self.width // 2 + offset_x, self.height // 2 + offset_y), radius)
+        surf.set_alpha(self.alpha)
+        return surf
 
     def update(self):
         self.y += self.speed
@@ -53,13 +67,4 @@ class Nebula:
             self.x = random.randint(0, SCREEN_WIDTH)
 
     def draw(self, surface):
-        nebula_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        for i in range(5):
-            offset_x = random.randint(-20, 20)
-            offset_y = random.randint(-20, 20)
-            radius = min(self.width, self.height) // 2 + random.randint(-10, 10)
-            color = (*self.color, self.alpha // 5)
-            pygame.draw.circle(nebula_surface, color,
-                             (self.width // 2 + offset_x, self.height // 2 + offset_y), radius)
-        nebula_surface.set_alpha(self.alpha)
-        surface.blit(nebula_surface, (self.x, self.y))
+        surface.blit(self._surface, (self.x, self.y))
