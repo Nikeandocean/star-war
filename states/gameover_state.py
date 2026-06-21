@@ -5,7 +5,7 @@ import pygame
 
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE, RED, GREEN, YELLOW, GOLD,
-    CYAN, SILVER, NEON_GREEN, UI_TEXT, UI_TEXT_DIM,
+    CYAN, SILVER, NEON_GREEN, UI_TEXT, UI_TEXT_DIM, USE_OPENGL,
     font_large, font_medium, font_small, font_tiny,
 )
 from state_machine import State
@@ -54,8 +54,9 @@ class GameOverState(State):
 
     def draw(self, screen):
         screen.fill(BLACK)
-        for star in self.stars:
-            star.draw(screen, self.time)
+        if not USE_OPENGL:
+            for star in self.stars:
+                star.draw(screen, self.time)
 
         # Game Over title
         pulse = int(math.sin(self.time * 0.08) * 20 + 200)

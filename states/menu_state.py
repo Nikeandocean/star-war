@@ -6,7 +6,7 @@ import pygame
 
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE, RED, GREEN, YELLOW, CYAN, GOLD,
-    NEON_BLUE, UI_BG, UI_BORDER, UI_HIGHLIGHT, UI_TEXT, UI_TEXT_DIM,
+    NEON_BLUE, UI_BG, UI_BORDER, UI_HIGHLIGHT, UI_TEXT, UI_TEXT_DIM, USE_OPENGL,
     font_large, font_medium, font_small,
 )
 from state_machine import State
@@ -70,11 +70,11 @@ class MenuState(State):
     def draw(self, screen):
         screen.fill(BLACK)
 
-        # Background
-        for star in self.stars:
-            star.draw(screen, self.time)
-        for nebula in self.nebulae:
-            nebula.draw(screen)
+        if not USE_OPENGL:
+            for star in self.stars:
+                star.draw(screen, self.time)
+            for nebula in self.nebulae:
+                nebula.draw(screen)
 
         # Title with glow
         glow = int(math.sin(self.time * 0.05) * 30 + 200)

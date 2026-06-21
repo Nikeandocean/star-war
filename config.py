@@ -5,7 +5,24 @@ pygame.init()
 # Screen settings
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF)
+
+# Try OpenGL context for GPU-accelerated rendering
+USE_OPENGL = False
+try:
+    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, 3)
+    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, 3)
+    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK,
+                                     pygame.GL_CONTEXT_PROFILE_CORE)
+    pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT),
+                            pygame.OPENGL | pygame.DOUBLEBUF)
+    USE_OPENGL = True
+except pygame.error:
+    # Fallback to software rendering
+    pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF)
+
+# Offscreen surface for game states to draw on (always software surface)
+screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+
 pygame.display.set_caption("Galaxy Battle")
 
 # Colors

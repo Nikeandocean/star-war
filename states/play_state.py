@@ -8,7 +8,7 @@ import pygame
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE, RED, GREEN, YELLOW,
     CYAN, ORANGE, PURPLE, GOLD, SILVER, UI_TEXT, UI_TEXT_DIM,
-    DAMAGE_COLOR, HEAL_COLOR,
+    DAMAGE_COLOR, HEAL_COLOR, USE_OPENGL,
     font_large, font_medium, font_small, font_tiny, font_damage,
 )
 from state_machine import State
@@ -75,7 +75,7 @@ class PlayState(State):
 
         # Flash overlay (full-screen white flash on big hits)
         self.flash_timer = 0
-        self.flash_alpha = 0
+        self.flash_alpha_val = 0
 
         # Vignette (red edge flash when player hit)
         self.vignette_timer = 0
@@ -266,7 +266,7 @@ class PlayState(State):
         self._add_particles(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, GOLD, 50)
         audio_manager.get().play('level_up')
         self.flash_timer = 10
-        self.flash_alpha = 100
+        self.flash_alpha_val = 100
 
     def _game_over(self):
         if self.score > self.high_score:
@@ -276,7 +276,7 @@ class PlayState(State):
         audio_manager.get().play('big_explosion')
         self.hitstop_timer = 15
         self.flash_timer = 20
-        self.flash_alpha = 200
+        self.flash_alpha_val = 200
 
         survival_time = (pygame.time.get_ticks() - self.start_ticks) // 1000
         stats = {
@@ -480,7 +480,7 @@ class PlayState(State):
                 self.shake_timer = 30
                 self.shake_intensity = 8
                 self.flash_timer = 8
-                self.flash_alpha = 150
+                self.flash_alpha_val = 150
                 audio_manager.get().play('big_explosion')
                 for enemy in list(self.enemies):
                     dist = math.hypot(
@@ -582,20 +582,47 @@ class PlayState(State):
             return (offset_x, offset_y)
         return (0, 0)
 
+    # ── Post-processing attributes (read by GL renderer) ─────────
+
+    @property
+    def vignette_alpha(self):
+        if self.vignette_timer > 0:
+            return self.vignette_timer / 20.0
+        return 0.0
+
+    @property
+    def flash_alpha(self):
+        if self.flash_timer > 0:
+            return (self.flash_alpha_val * (self.flash_timer / 20.0)) / 255.0
+        return 0.0
+
+    @property
+    def shake_offset_x(self):
+        if self.shake_timer > 0:
+            intensity = self.shake_intensity * (self.shake_timer / 20)
+            return random.uniform(-intensity, intensity) / SCREEN_WIDTH
+        return 0.0
+
+    @property
+    def shake_offset_y(self):
+        if self.shake_timer > 0:
+            intensity = self.shake_intensity * (self.shake_timer / 20)
+            return random.uniform(-intensity, intensity) / SCREEN_HEIGHT
+        return 0.0
+
     # ── Draw ──────────────────────────────────────────────────────
 
     def draw(self, screen):
         shake = self._screen_shake()
-        # Apply shake via offset (we draw everything offset)
         ox, oy = shake
 
         screen.fill(BLACK)
 
-        # Background
-        for star in self.stars:
-            star.draw(screen, self.game_time)
-        for nebula in self.nebulae:
-            nebula.draw(screen)
+        if not USE_OPENGL:
+            for star in self.stars:
+                star.draw(screen, self.game_time)
+            for nebula in self.nebulae:
+                nebula.draw(screen)
 
         # Player
         screen.blit(self.player.image, (self.player.rect.x + ox, self.player.rect.y + oy))
@@ -674,15 +701,15 @@ class PlayState(State):
 
         # ── Post-processing effects ───────────────────────────────
 
-        # Full-screen flash
-        if self.flash_timer > 0:
-            alpha = int(self.flash_alpha * (self.flash_timer / 20))
+        # Full-screen flash (CPU fallback only)
+        if self.flash_timer > 0 and not USE_OPENGL:
+            alpha = int(self.flash_alpha_val * (self.flash_timer / 20))
             flash_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
             flash_surf.fill((255, 255, 255, min(255, alpha)))
             screen.blit(flash_surf, (0, 0))
 
-        # Vignette (red edge when hit)
-        if self.vignette_timer > 0:
+        # Vignette (red edge when hit, CPU fallback only)
+        if self.vignette_timer > 0 and not USE_OPENGL:
             alpha = int(255 * (self.vignette_timer / 20))
             self._vignette_surf.set_alpha(alpha)
             screen.blit(self._vignette_surf, (0, 0))

@@ -15,7 +15,7 @@ A Pygame-based space shooter game ("Galaxy Battle"). The project uses a state ma
 python main.py
 ```
 
-No build step, no package manager, no tests. Dependencies: `pygame`, `numpy` (installed in `.venv`).
+No build step, no package manager, no tests. Dependencies: `pygame`, `numpy`, `PyOpenGL` (installed in `.venv`).
 
 ## Architecture
 
@@ -34,7 +34,8 @@ The codebase follows a state machine pattern with manager singletons.
 | `enemies.py` | `Enemy` (4 types), `EnemyBullet`, `Boss` — AI, attacks, drawing |
 | `weapons.py` | `Bullet`, `Missile`, `Bomb`, `PowerUp` — projectiles and collectibles |
 | `effects.py` | `Particle`, `EngineFlame`, `Explosion`, `LaserBeam`, `DamageNumber` |
-| `background.py` | `Star` (parallax), `Nebula` — scrolling space background |
+| `background.py` | `Star` (parallax), `Nebula` — scrolling space background (CPU fallback) |
+| `gl_renderer.py` | GPU-accelerated rendering — procedural nebula shader, post-processing |
 | `states/` | Game states (see below) |
 
 ### State Machine
@@ -57,6 +58,23 @@ States use `machine.push()` (pause over gameplay), `machine.pop()` (resume), and
 - **Sprite-based**: All game objects extend `pygame.sprite.Sprite` (except `Boss` and `LaserBeam`).
 - **Procedural rendering**: All sprites drawn via `pygame.draw.*` — no image files.
 - **Draw offsets**: All `draw()` methods accept `(ox, oy)` offset parameters for screen shake support.
+- **Hybrid GPU/CPU Rendering**: `gl_renderer.py` uses OpenGL 3.3 shaders for background and post-processing. Game states draw to an offscreen `pygame.Surface`, which is uploaded as a GL texture and composited over the shader background. Falls back to pure CPU rendering if OpenGL is unavailable (`USE_OPENGL` flag in `config.py`).
+
+### GPU Rendering Pipeline
+
+```
+GL Background Shader (nebula + stars)
+        ↓
+Game Surface (pygame sprites, UI)
+        ↓
+GL Post-processing (vignette, flash, screen shake)
+        ↓
+Display
+```
+
+- **Background shader**: Procedural nebula via layered fBm noise (5 octaves), animated star field with twinkling
+- **Post-processing shader**: Vignette (radial darkening), flash overlay (additive white), screen shake (UV offset)
+- **PlayState** exposes `vignette_alpha`, `flash_alpha`, `shake_offset_x`, `shake_offset_y` as properties for the GL renderer to read
 
 ### Game Feel Systems
 
@@ -83,7 +101,8 @@ Settings stored in `settings.json`, loaded by `settings.py`. `DIFFICULTY_TABLE` 
 
 ## Important Notes
 
-- `config.py` has side effects (`pygame.init()`) on import.
+- `config.py` has side effects (`pygame.init()`, display mode) on import. Creates OpenGL context if available.
+- `screen` in `config.py` is an offscreen `pygame.Surface` (not the display surface) when OpenGL is enabled.
 - `pygame.mixer.init()` is called by `audio_manager.py`, not `config.py`.
 - `highscore.txt` and `settings.json` are runtime data (in `.gitignore`).
 - `achievements.json` is also runtime data.
